@@ -47,7 +47,8 @@ Once the server is running, open your browser and navigate to:
 ```
 fraud-detection-dashboard/
 ├── index.html              # Main dashboard page
-├── app.js                  # Core application logic
+├── app-fixed.js            # Core application logic (debugged version)
+├── app.js                  # Original application logic
 ├── style.css               # Styling and themes
 ├── security.js             # Security features
 ├── realtime.js             # Real-time functionality
@@ -57,6 +58,7 @@ fraud-detection-dashboard/
 ├── server.py               # Python HTTP server
 ├── server.js               # Node.js HTTP server
 ├── start-server.sh         # Startup script
+├── DEBUG_REPORT.md         # Debugging documentation
 └── README.md               # This file
 ```
 
