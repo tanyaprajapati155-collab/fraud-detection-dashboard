@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Test - Fraud Detection Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 20px;
+        }
+        .chart-container {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        .chart-title {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        canvas {
+            background: white;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Chart Test - Fraud Detection Dashboard</h1>
+    <p>Testing if Chart.js is working properly...</p>
+    
+    <div class="chart-container">
+        <h3 class="chart-title">Fraud Patterns by Transaction Type</h3>
+        <div style="position: relative; height: 300px;">
+            <canvas id="transactionChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h3 class="chart-title">Hourly Fraud Distribution</h3>
+        <div style="position: relative; height: 300px;">
+            <canvas id="hourlyChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <h3 class="chart-title">Geographic Fraud Distribution</h3>
+        <div style="position: relative; height: 300px;">
+            <canvas id="geographicChart"></canvas>
+        </div>
+    </div>
+    
+    <script>
+        console.log('Chart test starting...');
+        
+        // Test data
+        const transactionTypes = [
+            { "type": "CASH_OUT", "fraudRate": 0.35 },
+            { "type": "PAYMENT", "fraudRate": 0.12 },
+            { "type": "CASH_IN", "fraudRate": 0.08 },
+            { "type": "TRANSFER", "fraudRate": 0.28 },
+            { "type": "DEBIT", "fraudRate": 0.15 }
+        ];
+        
+        const hourlyFraud = [
+            { "hour": 0, "fraudCount": 45 },
+            { "hour": 1, "fraudCount": 52 },
+            { "hour": 2, "fraudCount": 67 },
+            { "hour": 3, "fraudCount": 78 },
+            { "hour": 4, "fraudCount": 56 },
+            { "hour": 5, "fraudCount": 34 },
+            { "hour": 6, "fraudCount": 23 },
+            { "hour": 7, "fraudCount": 31 },
+            { "hour": 8, "fraudCount": 28 },
+            { "hour": 9, "fraudCount": 25 },
+            { "hour": 10, "fraudCount": 22 },
+            { "hour": 11, "fraudCount": 19 },
+            { "hour": 12, "fraudCount": 26 },
+            { "hour": 13, "fraudCount": 33 },
+            { "hour": 14, "fraudCount": 38 },
+            { "hour": 15, "fraudCount": 42 },
+            { "hour": 16, "fraudCount": 48 },
+            { "hour": 17, "fraudCount": 54 },
+            { "hour": 18, "fraudCount": 61 },
+            { "hour": 19, "fraudCount": 58 },
+            { "hour": 20, "fraudCount": 69 },
+            { "hour": 21, "fraudCount": 74 },
+            { "hour": 22, "fraudCount": 82 },
+            { "hour": 23, "fraudCount": 71 }
+        ];
+        
+        const countries = [
+            { "name": "United States", "fraudRate": 0.14 },
+            { "name": "United Kingdom", "fraudRate": 0.18 },
+            { "name": "Canada", "fraudRate": 0.16 },
+            { "name": "Australia", "fraudRate": 0.19 },
+            { "name": "Germany", "fraudRate": 0.22 }
+        ];
+        
+        // Create charts
+        try {
+            // Transaction Chart
+            const ctx1 = document.getElementById('transactionChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: transactionTypes.map(t => t.type),
+                    datasets: [{
+                        data: transactionTypes.map(t => t.fraudRate * 100),
+                        backgroundColor: ['#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F'],
+                        borderColor: '#00d4ff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#e0e0e0',
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+            console.log('✅ Transaction chart created');
+            
+            // Hourly Chart
+            const ctx2 = document.getElementById('hourlyChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: hourlyFraud.map(h => h.hour + ':00'),
+                    datasets: [{
+                        label: 'Fraud Count',
+                        data: hourlyFraud.map(h => h.fraudCount),
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e0e0e0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+            console.log('✅ Hourly chart created');
+            
+            // Geographic Chart
+            const ctx3 = document.getElementById('geographicChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: countries.map(c => c.name),
+                    datasets: [{
+                        label: 'Fraud Rate (%)',
+                        data: countries.map(c => c.fraudRate * 100),
+                        backgroundColor: [
+                            'rgba(31, 184, 205, 0.8)',
+                            'rgba(255, 193, 133, 0.8)',
+                            'rgba(180, 65, 60, 0.8)',
+                            'rgba(236, 235, 213, 0.8)',
+                            'rgba(93, 135, 143, 0.8)'
+                        ],
+                        borderColor: [
+                            '#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5', '#5D878F'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e0e0e0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+            console.log('✅ Geographic chart created');
+            
+            console.log('🎉 All charts created successfully!');
+            
+        } catch (error) {
+            console.error('❌ Error creating charts:', error);
+        }
+    </script>
+</body>
+</html>

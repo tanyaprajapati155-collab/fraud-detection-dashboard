@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Server Test</h1>
+    <p>If you can see this, the server is working!</p>
+    
+    <div style="width: 400px; height: 300px;">
+        <canvas id="testChart"></canvas>
+    </div>
+    
+    <script>
+        // Test Chart.js
+        const ctx = document.getElementById('testChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Fraud', 'Legitimate'],
+                datasets: [{
+                    data: [17.5, 82.5],
+                    backgroundColor: ['#ff6384', '#36a2eb']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        
+        console.log('Test chart created successfully');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Advanced Fraud Detection Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global notification function
+        function showNotification(message, type = 'info') {
+            try {
+                const toastContainer = document.getElementById('toastContainer');
+                if (!toastContainer) {
+                    console.log('Notification:', message);
+                    return;
+                }
+                
+                const toast = document.createElement('div');
+                toast.className = `toast toast--${type}`;
+                toast.textContent = message;
+                
+                toastContainer.appendChild(toast);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 3000);
+            } catch (error) {
+                console.error('Error showing notification:', error);
+            }
+        }
+        
+        // Check if Chart.js loaded successfully
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js failed to load');
+            document.addEventListener('DOMContentLoaded', function() {
+                showNotification('Chart library failed to load. Some features may not work properly.', 'error');
+            });
+        }
+    </script>
+    <script src="security.js"></script>
+    <script src="realtime.js"></script>
+    <script src="analytics.js"></script>
+    <script src="user-management.js"></script>
+    <script src="api-endpoints.js"></script>
+</head>
+<body>
+    <!-- Authentication Modal -->
+    <div class="modal hidden" id="authModal">
+        <div class="modal-content auth-modal">
+            <div class="modal-header">
+                <h3>🔐 Secure Authentication</h3>
+                <div class="security-indicator">
+                    <span class="security-dot"></span>
+                    <span class="security-text">Secure Connection</span>
+                </div>
+            </div>
+            <div class="modal-body">
+                <form id="authForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" required autocomplete="current-password">
+                        <div class="password-strength hidden" id="passwordStrength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"></div>
+                            </div>
+                            <span class="strength-text">Password Strength</span>
+                        </div>
+                    </div>
+                    <div class="form-group mfa-group hidden" id="mfaGroup">
+                        <label class="form-label">MFA Code</label>
+                        <input type="text" class="form-control" id="mfaCode" placeholder="Enter 6-digit code" maxlength="6">
+                        <small class="form-help">Enter the code from your authenticator app</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rememberMe">
+                            <span class="checkmark"></span>
+                            Remember me for 30 days
+                        </label>
+                    </div>
+                    <div class="auth-actions">
+                        <button type="submit" class="btn btn--primary btn--full-width">
+                            <span class="btn-text">Sign In</span>
+                            <span class="btn-loading hidden">Authenticating...</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="auth-footer">
+                    <div class="security-features">
+                        <div class="feature-item">
+                            <span class="feature-icon">🛡️</span>
+                            <span class="feature-text">End-to-End Encryption</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🔒</span>
+                            <span class="feature-text">Session Management</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">📊</span>
+                            <span class="feature-text">Audit Logging</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Dashboard Modal -->
+    <div class="modal hidden" id="securityModal">
+        <div class="modal-content security-modal">
+            <div class="modal-header">
+                <h3>🛡️ Security Dashboard</h3>
+                <button class="modal-close" id="closeSecurityModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="security-overview">
+                    <div class="security-score">
+                        <div class="score-circle">
+                            <span class="score-value" id="securityScore">85</span>
+                            <span class="score-label">Security Score</span>
+                        </div>
+                    </div>
+                    <div class="security-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="activeSessions">1</span>
+                            <span class="stat-label">Active Sessions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="failedAttempts">0</span>
+                            <span class="stat-label">Failed Attempts</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="securityEvents">12</span>
+                            <span class="stat-label">Security Events</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="security-recommendations">
+                    <h4>Security Recommendations</h4>
+                    <ul id="securityRecommendations">
+                        <li>Enable two-factor authentication</li>
+                        <li>Update your password regularly</li>
+                    </ul>
+                </div>
+                <div class="recent-events">
+                    <h4>Recent Security Events</h4>
+                    <div class="events-list" id="recentSecurityEvents">
+                        <!-- Events will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary" id="exportSecurityData">Export Security Data</button>
+                <button class="btn btn--primary" id="refreshSecurityData">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal -->
+    <div class="modal hidden" id="userManagementModal">
+        <div class="modal-content user-management-modal">
+            <div class="modal-header">
+                <h3>👥 User Management</h3>
+                <button class="modal-close" id="closeUserManagementModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="user-management-tabs">
+                    <button class="tab-btn active" data-tab="users">Users</button>
+                    <button class="tab-btn" data-tab="roles">Roles</button>
+                    <button class="tab-btn" data-tab="permissions">Permissions</button>
+                    <button class="tab-btn" data-tab="activity">Activity Log</button>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tab-content active" id="usersTab">
+                    <div class="users-header">
+                        <div class="search-box">
+                            <input type="text" id="userSearch" placeholder="Search users...">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                        <button class="btn btn--primary" id="addUserBtn">+ Add User</button>
+                    </div>
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Roles Tab -->
+                <div class="tab-content" id="rolesTab">
+                    <div class="roles-header">
+                        <button class="btn btn--primary" id="addRoleBtn">+ Add Role</button>
+                    </div>
+                    <div class="roles-grid" id="rolesGrid">
+                        <!-- Roles will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Permissions Tab -->
+                <div class="tab-content" id="permissionsTab">
+                    <div class="permissions-matrix" id="permissionsMatrix">
+                        <!-- Permissions matrix will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Activity Log Tab -->
+                <div class="tab-content" id="activityTab">
+                    <div class="activity-filters">
+                        <select id="activityFilter">
+                            <option value="all">All Activities</option>
+                            <option value="login">Login Events</option>
+                            <option value="permission">Permission Changes</option>
+                            <option value="user">User Management</option>
+                        </select>
+                        <input type="date" id="activityDateFilter">
+                    </div>
+                    <div class="activity-log" id="userActivityLog">
+                        <!-- Activity log will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div class="modal hidden" id="userFormModal">
+        <div class="modal-content user-form-modal">
+            <div class="modal-header">
+                <h3 id="userFormTitle">Add New User</h3>
+                <button class="modal-close" id="closeUserFormModal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm" class="user-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="userEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select class="form-control" id="userRole" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Administrator</option>
+                            <option value="analyst">Fraud Analyst</option>
+                            <option value="viewer">Viewer</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select class="form-control" id="userDepartment">
+                            <option value="">Select Department</option>
+                            <option value="security">Security</option>
+                            <option value="risk">Risk Management</option>
+                            <option value="operations">Operations</option>
+                            <option value="compliance">Compliance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sendWelcomeEmail">
+                            <span class="checkmark"></span>
+                            Send welcome email
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="requirePasswordChange">
+                            <span class="checkmark"></span>
+                            Require password change on first login
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" id="cancelUserForm">Cancel</button>
+                <button type="submit" form="userForm" class="btn btn--primary" id="saveUserBtn">Save User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <div class="nav__brand">
+                <h2 class="brand-title">FraudGuard AI</h2>
+                <span class="brand-subtitle">Advanced Fraud Detection Platform</span>
+            </div>
+            <div class="nav__status">
+                <div class="status-indicator">
+                    <span class="status-dot active" id="systemStatus"></span>
+                    <span class="status-text" id="statusText">System Online</span>
+                </div>
+                <div class="user-info">
+                    <span class="user-name" id="userName">Admin Panel</span>
+                    <div class="user-menu">
+                        <button class="btn btn--sm btn--outline" id="securityBtn">
+                            <span class="btn-icon">🛡️</span>
+                            Security
+                        </button>
+                        <button class="btn btn--sm btn--outline" id="userManagementBtn">
+                            <span class="btn-icon">👥</span>
+                            Users
+                        </button>
+                        <button class="btn btn--sm btn--outline" id="settingsBtn">Settings</button>
+                        <button class="btn btn--sm btn--outline" id="logoutBtn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Dashboard Tabs -->
+    <div class="dashboard-tabs">
+        <div class="container">
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="overview">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-text">Overview</span>
+                </button>
+                <button class="tab-btn" data-tab="analysis">
+                    <span class="tab-icon">🔍</span>
+                    <span class="tab-text">Real-time Analysis</span>
+                </button>
+                <button class="tab-btn" data-tab="alerts">
+                    <span class="tab-icon">🚨</span>
+                    <span class="tab-text">Alerts & Notifications</span>
+                </button>
+                <button class="tab-btn" data-tab="reports">
+                    <span class="tab-icon">📈</span>
+                    <span class="tab-text">Reports & Analytics</span>
+                </button>
+                <button class="tab-btn" data-tab="ml-models">
+                    <span class="tab-icon">🤖</span>
+                    <span class="tab-text">ML Models</span>
+                </button>
+                <button class="tab-btn" data-tab="settings">
+                    <span class="tab-icon">⚙️</span>
+                    <span class="tab-text">System Settings</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <main class="main">
+        <div class="container">
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overview">
+                <!-- Key Metrics Section -->
+                <section class="metrics-section">
+                    <h2 class="section-title">System Overview</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon">📊</div>
+                            <div class="metric-content">
+                                <h3 class="metric-value" id="totalTransactions">20,000</h3>
+                                <p class="metric-label">Total Transactions</p>
+                                <div class="metric-trend" id="transactionTrend">↗️ +5.2%</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">🛡️</div>
+                            <div class="metric-content">
+                                <h3 class="metric-value fraud-detected" id="fraudDetected">3,502</h3>
+                                <p class="metric-label">Fraud Detected</p>
+                                <div class="metric-trend" id="fraudTrend">↗️ +2.1%</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">⚡</div>
+                            <div class="metric-content">
+                                <h3 class="metric-value accuracy" id="accuracyRate">94.2%</h3>
+                                <p class="metric-label">Accuracy Rate</p>
+                                <div class="metric-trend" id="accuracyTrend">↗️ +0.8%</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">📈</div>
+                            <div class="metric-content">
+                                <h3 class="metric-value fraud-rate" id="fraudRate">17.5%</h3>
+                                <p class="metric-label">Fraud Rate</p>
+                                <div class="metric-trend" id="fraudRateTrend">↘️ -1.2%</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">⏱️</div>
+                            <div class="metric-content">
+                                <h3 class="metric-value" id="avgResponseTime">45ms</h3>
+                                <p class="metric-label">Avg Response Time</p>
+                                <div class="metric-trend" id="responseTrend">↘️ -12ms</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">🎯</div>
+                            <div class="metric-content">
+                                <h3 class="metric-value" id="precisionRate">89.3%</h3>
+                                <p class="metric-label">Precision Rate</p>
+                                <div class="metric-trend" id="precisionTrend">↗️ +1.5%</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Real-time Activity Feed -->
+                <section class="activity-section">
+                    <h2 class="section-title">
+                        Real-time Activity
+                        <div class="realtime-indicator">
+                            <span class="realtime-dot" id="realtimeDot"></span>
+                            <span class="realtime-text" id="realtimeText">Live</span>
+                        </div>
+                    </h2>
+                    <div class="activity-grid">
+                        <div class="activity-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Live Transactions</h3>
+                                <div class="feed-controls">
+                                    <button class="btn btn--sm btn--outline" id="pauseTransactions">Pause</button>
+                                    <button class="btn btn--sm btn--outline" id="clearTransactions">Clear</button>
+                                </div>
+                            </div>
+                            <div class="activity-feed" id="liveTransactions">
+                                <div class="feed-placeholder">
+                                    <div class="placeholder-icon">💳</div>
+                                    <div class="placeholder-text">Waiting for transactions...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-card">
+                            <div class="card-header">
+                                <h3 class="card-title">System Alerts</h3>
+                                <div class="feed-controls">
+                                    <button class="btn btn--sm btn--outline" id="pauseAlerts">Pause</button>
+                                    <button class="btn btn--sm btn--outline" id="clearAlerts">Clear</button>
+                                </div>
+                            </div>
+                            <div class="alert-feed" id="systemAlerts">
+                                <div class="feed-placeholder">
+                                    <div class="placeholder-icon">🚨</div>
+                                    <div class="placeholder-text">No alerts at this time</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Enhanced Analytics Section -->
+                <section class="analytics-section">
+                    <h2 class="section-title">Analytics Dashboard</h2>
+                    <div class="analytics-grid">
+                        <!-- Fraud Patterns Chart -->
+                        <div class="chart-card">
+                            <h3 class="chart-title">Fraud Patterns by Transaction Type</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="transactionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Hourly Fraud Distribution -->
+                        <div class="chart-card">
+                            <h3 class="chart-title">Hourly Fraud Distribution</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="hourlyChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Geographic Fraud Heatmap -->
+                        <div class="chart-card">
+                            <h3 class="chart-title">Geographic Fraud Distribution</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="geographicChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Model Performance Comparison -->
+                        <div class="chart-card full-width">
+                            <h3 class="chart-title">Model Performance Comparison</h3>
+                            <div class="chart-container" style="position: relative; height: 400px;">
+                                <canvas id="modelChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Real-time Analysis Tab -->
+            <div class="tab-content" id="analysis">
+                <section class="analysis-section">
+                    <h2 class="section-title">Advanced Transaction Analysis</h2>
+                    <div class="analysis-grid">
+                        <!-- Enhanced Transaction Input Form -->
+                        <div class="analysis-card">
+                            <h3 class="card-title">Transaction Analysis</h3>
+                            <form class="transaction-form" id="transactionForm">
+                                <!-- Basic Transaction Data -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">Basic Transaction Data</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Transaction Amount</label>
+                                            <input type="number" class="form-control" id="amount" placeholder="Enter amount" step="0.01" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Transaction Type</label>
+                                            <select class="form-control" id="transactionType" required>
+                                                <option value="">Select type</option>
+                                                <option value="CASH_OUT">Cash Out</option>
+                                                <option value="PAYMENT">Payment</option>
+                                                <option value="CASH_IN">Cash In</option>
+                                                <option value="TRANSFER">Transfer</option>
+                                                <option value="DEBIT">Debit</option>
+                                                <option value="CREDIT">Credit</option>
+                                                <option value="REFUND">Refund</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Origin Balance</label>
+                                            <input type="number" class="form-control" id="originBalance" placeholder="Origin account balance" step="0.01" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Destination Balance</label>
+                                            <input type="number" class="form-control" id="destBalance" placeholder="Destination balance" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Enhanced Transaction Data -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">Enhanced Transaction Data</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Merchant Category</label>
+                                            <select class="form-control" id="merchantCategory">
+                                                <option value="">Select category</option>
+                                                <option value="retail">Retail</option>
+                                                <option value="gas_station">Gas Station</option>
+                                                <option value="restaurant">Restaurant</option>
+                                                <option value="online_shopping">Online Shopping</option>
+                                                <option value="gambling">Gambling</option>
+                                                <option value="adult_services">Adult Services</option>
+                                                <option value="healthcare">Healthcare</option>
+                                                <option value="education">Education</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">IP Address</label>
+                                            <input type="text" class="form-control" id="ipAddress" placeholder="192.168.1.1">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">User Agent</label>
+                                            <input type="text" class="form-control" id="userAgent" placeholder="Browser info">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Previous Transaction Count (24h)</label>
+                                            <input type="number" class="form-control" id="recentTransactions" min="0" placeholder="0">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Geolocation</label>
+                                            <input type="text" class="form-control" id="geolocation" placeholder="Lat, Lng">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Card Present</label>
+                                            <select class="form-control" id="cardPresent">
+                                                <option value="true">Yes</option>
+                                                <option value="false">No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Behavioral Data -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">Behavioral & Contextual Data</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Hour of Day</label>
+                                            <select class="form-control" id="hourOfDay" required>
+                                                <option value="">Select hour</option>
+                                                <option value="0">00:00 - 01:00</option>
+                                                <option value="1">01:00 - 02:00</option>
+                                                <option value="2">02:00 - 03:00</option>
+                                                <option value="3">03:00 - 04:00</option>
+                                                <option value="4">04:00 - 05:00</option>
+                                                <option value="5">05:00 - 06:00</option>
+                                                <option value="6">06:00 - 07:00</option>
+                                                <option value="7">07:00 - 08:00</option>
+                                                <option value="8">08:00 - 09:00</option>
+                                                <option value="9">09:00 - 10:00</option>
+                                                <option value="10">10:00 - 11:00</option>
+                                                <option value="11">11:00 - 12:00</option>
+                                                <option value="12">12:00 - 13:00</option>
+                                                <option value="13">13:00 - 14:00</option>
+                                                <option value="14">14:00 - 15:00</option>
+                                                <option value="15">15:00 - 16:00</option>
+                                                <option value="16">16:00 - 17:00</option>
+                                                <option value="17">17:00 - 18:00</option>
+                                                <option value="18">18:00 - 19:00</option>
+                                                <option value="19">19:00 - 20:00</option>
+                                                <option value="20">20:00 - 21:00</option>
+                                                <option value="21">21:00 - 22:00</option>
+                                                <option value="22">22:00 - 23:00</option>
+                                                <option value="23">23:00 - 00:00</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Device Type</label>
+                                            <select class="form-control" id="deviceType" required>
+                                                <option value="">Select device</option>
+                                                <option value="mobile">Mobile</option>
+                                                <option value="web">Web</option>
+                                                <option value="api">API</option>
+                                                <option value="atm">ATM</option>
+                                                <option value="pos">POS Terminal</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Country</label>
+                                            <select class="form-control" id="country" required>
+                                                <option value="">Select country</option>
+                                                <option value="US">United States</option>
+                                                <option value="UK">United Kingdom</option>
+                                                <option value="CA">Canada</option>
+                                                <option value="AU">Australia</option>
+                                                <option value="DE">Germany</option>
+                                                <option value="FR">France</option>
+                                                <option value="IT">Italy</option>
+                                                <option value="ES">Spain</option>
+                                                <option value="JP">Japan</option>
+                                                <option value="CN">China</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Account Age (days)</label>
+                                            <input type="number" class="form-control" id="accountAge" placeholder="Account age in days" min="0" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ML Model Selection -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title">Analysis Configuration</h4>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">ML Model</label>
+                                            <select class="form-control" id="mlModel">
+                                                <option value="ensemble">Ensemble (Recommended)</option>
+                                                <option value="xgboost">XGBoost</option>
+                                                <option value="random_forest">Random Forest</option>
+                                                <option value="neural_network">Neural Network</option>
+                                                <option value="isolation_forest">Isolation Forest</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Analysis Depth</label>
+                                            <select class="form-control" id="analysisDepth">
+                                                <option value="standard">Standard</option>
+                                                <option value="deep">Deep Analysis</option>
+                                                <option value="comprehensive">Comprehensive</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn--primary btn--full-width">
+                                    <span class="btn-text">Analyze Transaction</span>
+                                    <span class="btn-loading hidden">Analyzing...</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Enhanced Results Panel -->
+                        <div class="analysis-card results-panel hidden" id="resultsPanel">
+                            <div class="results-header">
+                                <h3 class="card-title">Advanced Fraud Analysis Results</h3>
+                                <div class="analysis-meta">
+                                    <span class="analysis-time" id="analysisTime">--:--</span>
+                                    <span class="model-confidence" id="modelConfidence">Confidence: --%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Risk Score Visualization -->
+                            <div class="fraud-indicator">
+                                <div class="fraud-probability">
+                                    <div class="probability-circle" id="probabilityCircle">
+                                        <span class="probability-value" id="probabilityValue">0%</span>
+                                    </div>
+                                    <div class="risk-level" id="riskLevel">Analyzing...</div>
+                                    <div class="risk-score" id="riskScore">Risk Score: --</div>
+                                </div>
+                            </div>
+
+                            <!-- Advanced Analytics Insights -->
+                            <div class="analytics-insights">
+                                <h4 class="insights-title">🔍 AI Insights</h4>
+                                <div class="insights-grid" id="insightsGrid">
+                                    <!-- Insights will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Anomaly Detection -->
+                            <div class="anomaly-detection">
+                                <h4 class="anomaly-title">🚨 Anomaly Detection</h4>
+                                <div class="anomalies-list" id="anomaliesList">
+                                    <!-- Anomalies will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- ML Model Explanation -->
+                            <div class="ml-explanation">
+                                <h4 class="explanation-title">🤖 Model Explanation</h4>
+                                <div class="explanation-content" id="mlExplanation">
+                                    <!-- ML explanation will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Risk Factors -->
+                            <div class="risk-factors">
+                                <h4 class="factors-title">⚠️ Risk Factors</h4>
+                                <div class="factors-list" id="factorsList">
+                                    <!-- Risk factors will be populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Behavioral Analysis -->
+                            <div class="behavioral-analysis">
+                                <h4 class="behavioral-title">📊 Behavioral Analysis</h4>
+                                <div class="behavioral-content" id="behavioralAnalysis">
+                                    <!-- Behavioral analysis will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Recommendations -->
+                            <div class="recommendations">
+                                <h4 class="recommendation-title">💡 Recommendations</h4>
+                                <div class="recommendations-list" id="recommendationsList">
+                                    <!-- Recommendations will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <button class="btn btn--danger" id="blockTransaction">
+                                    <span class="btn-icon">🚫</span>
+                                    Block Transaction
+                                </button>
+                                <button class="btn btn--warning" id="requestReview">
+                                    <span class="btn-icon">👁️</span>
+                                    Manual Review
+                                </button>
+                                <button class="btn btn--success" id="approveTransaction">
+                                    <span class="btn-icon">✅</span>
+                                    Approve Transaction
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Alerts Tab -->
+            <div class="tab-content" id="alerts">
+                <section class="alerts-section">
+                    <h2 class="section-title">Alerts & Notifications</h2>
+                    
+                    <!-- Enhanced Alert Controls -->
+                    <div class="alert-controls">
+                        <div class="alert-filters">
+                            <div class="filter-group">
+                                <label>Alert Type</label>
+                                <select id="alertTypeFilter">
+                                    <option value="all">All Alerts</option>
+                                    <option value="critical">Critical</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                    <option value="system">System</option>
+                                    <option value="security">Security</option>
+                                    <option value="performance">Performance</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Time Range</label>
+                                <select id="timeRangeFilter">
+                                    <option value="1h">Last Hour</option>
+                                    <option value="24h">Last 24 Hours</option>
+                                    <option value="7d">Last 7 Days</option>
+                                    <option value="30d">Last 30 Days</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Status</label>
+                                <select id="statusFilter">
+                                    <option value="all">All Status</option>
+                                    <option value="new">New</option>
+                                    <option value="acknowledged">Acknowledged</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="escalated">Escalated</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="alert-actions">
+                            <button class="btn btn--primary" id="refreshAlerts">
+                                <span class="btn-icon">🔄</span>
+                                Refresh
+                            </button>
+                            <button class="btn btn--secondary" id="markAllRead">
+                                <span class="btn-icon">✓</span>
+                                Mark All Read
+                            </button>
+                            <button class="btn btn--outline" id="exportAlerts">
+                                <span class="btn-icon">📊</span>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Alert Statistics -->
+                    <div class="alert-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">🚨</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalAlerts">0</div>
+                                <div class="stat-label">Total Alerts</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="criticalAlerts">0</div>
+                                <div class="stat-label">Critical</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔍</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="newAlerts">0</div>
+                                <div class="stat-label">New</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="alertAvgResponseTime">0m</div>
+                                <div class="stat-label">Avg Response</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Alerts List -->
+                    <div class="alerts-container">
+                        <div class="alerts-header">
+                            <div class="alerts-title">
+                                <h3>Active Alerts</h3>
+                                <span class="alerts-count" id="filteredAlertsCount">0 alerts</span>
+                            </div>
+                            <div class="view-options">
+                                <button class="view-btn active" data-view="list" id="listView">
+                                    <span class="btn-icon">📋</span>
+                                    List
+                                </button>
+                                <button class="view-btn" data-view="grid" id="gridView">
+                                    <span class="btn-icon">⊞</span>
+                                    Grid
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Alerts List -->
+                        <div class="alerts-list" id="alertsList">
+                            <!-- Alerts will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Alert Detail Modal -->
+                    <div class="modal hidden" id="alertModal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 id="modalTitle">Alert Details</h3>
+                                <button class="modal-close" id="closeModal">×</button>
+                            </div>
+                            <div class="modal-body" id="modalBody">
+                                <!-- Alert details will be populated here -->
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn--secondary" id="acknowledgeAlert">Acknowledge</button>
+                                <button class="btn btn--primary" id="resolveAlert">Resolve</button>
+                                <button class="btn btn--outline" id="escalateAlert">Escalate</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-content" id="reports">
+                <section class="reports-section">
+                    <h2 class="section-title">Reports & Analytics</h2>
+                    
+                    <!-- Report Filters -->
+                    <div class="report-filters">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Date Range</label>
+                                <input type="date" id="reportStartDate" value="2024-01-01">
+                                <input type="date" id="reportEndDate" value="2024-12-31">
+                            </div>
+                            <div class="filter-group">
+                                <label>Report Type</label>
+                                <select id="reportType">
+                                    <option value="fraud_summary">Fraud Summary</option>
+                                    <option value="model_performance">Model Performance</option>
+                                    <option value="geographic_analysis">Geographic Analysis</option>
+                                    <option value="behavioral_patterns">Behavioral Patterns</option>
+                                    <option value="custom">Custom Report</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn--primary" id="generateReport">Generate Report</button>
+                                <button class="btn btn--secondary" id="exportReport">Export</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Content -->
+                    <div class="report-content" id="reportContent">
+                        <!-- Report content will be populated here -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- ML Models Tab -->
+            <div class="tab-content" id="ml-models">
+                <section class="ml-models-section">
+                    <h2 class="section-title">Machine Learning Models</h2>
+                    
+                    <!-- Model Performance Table -->
+                    <div class="table-card">
+                        <table class="performance-table">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Accuracy</th>
+                                    <th>Precision</th>
+                                    <th>Recall</th>
+                                    <th>F1-Score</th>
+                                    <th>AUC-ROC</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modelTableBody">
+                                <!-- Table rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Model Training Section -->
+                    <div class="model-training">
+                        <h3 class="card-title">Model Training</h3>
+                        <div class="training-controls">
+                            <button class="btn btn--primary" id="trainModel">Train New Model</button>
+                            <button class="btn btn--secondary" id="retrainModel">Retrain Existing</button>
+                            <button class="btn btn--outline" id="validateModel">Validate Model</button>
+                        </div>
+                        <div class="training-progress hidden" id="trainingProgress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-text" id="progressText">Training in progress...</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings">
+                <section class="settings-section">
+                    <h2 class="section-title">System Settings</h2>
+                    
+                    <div class="settings-grid">
+                        <!-- Risk Thresholds -->
+                        <div class="settings-card">
+                            <h3 class="card-title">Risk Thresholds</h3>
+                            <div class="setting-group">
+                                <label>Low Risk Threshold</label>
+                                <input type="number" id="lowRiskThreshold" value="30" min="0" max="100">
+                            </div>
+                            <div class="setting-group">
+                                <label>Medium Risk Threshold</label>
+                                <input type="number" id="mediumRiskThreshold" value="60" min="0" max="100">
+                            </div>
+                            <div class="setting-group">
+                                <label>High Risk Threshold</label>
+                                <input type="number" id="highRiskThreshold" value="80" min="0" max="100">
+                            </div>
+                        </div>
+
+                        <!-- Alert Settings -->
+                        <div class="settings-card">
+                            <h3 class="card-title">Alert Settings</h3>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="emailAlerts" checked>
+                                    Email Alerts
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="smsAlerts">
+                                    SMS Alerts
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="pushNotifications" checked>
+                                    Push Notifications
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="settings-card">
+                            <h3 class="card-title">Security Settings</h3>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="enableEncryption" checked>
+                                    Enable Data Encryption
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="enableAuditTrail" checked>
+                                    Enable Audit Trail
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="enableBiometricAuth">
+                                    Enable Biometric Authentication
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn btn--primary" id="saveSettings">Save Settings</button>
+                        <button class="btn btn--secondary" id="resetSettings">Reset to Default</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Processing...</div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app-fixed.js"></script>
+</body>
+</html>
